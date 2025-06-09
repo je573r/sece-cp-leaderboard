@@ -1,0 +1,162 @@
+{{ define "leaderboard.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leaderboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: #181a20;
+            color: #eaeaea;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            color: #00e1ff;
+            text-shadow: 0 2px 16px #00e1ff33;
+        }
+        @keyframes gradient-slide {
+            0% { background-position: -100% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+        .leaderboard-container {
+            max-width: 98vw;
+            margin: 40px auto;
+            background: #23272f;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px #000a 0.5;
+            padding: 32px 8px 24px 8px;
+        }
+        th, td {
+            padding: 12px 18px;
+            text-align: center;
+            border-bottom: 1px solid #2c2f36;
+            /* Set default min-width for contest columns */
+            min-width: 120px;
+        }
+        th.rank-col, td.rank-col,
+        th.user-col, td.user-col,
+        th.points-col, td.points-col {
+            background: #181a20;
+        }
+        th.rank-col, td.rank-col {
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+        }
+        th.user-col, td.user-col {
+            width: 250px;
+            min-width: 250px;
+            max-width: 250px;
+        }
+        th.points-col, td.points-col {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+        }
+        table {
+            width: auto;
+            min-width: 900px;
+            border-collapse: separate;
+            border-spacing: 0;
+            /* Remove separate background */
+            background: none;
+            margin-left: 0;
+        }
+        .scroll-x {
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #23272f #181a20;
+        }
+        .scroll-x::-webkit-scrollbar {
+            height: 6px;
+            background: transparent;
+        }
+        .scroll-x::-webkit-scrollbar-thumb {
+            background: #23272f;
+            border-radius: 4px;
+        }
+        .scroll-x::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        tr:nth-child(even) {
+            background: #20232a;
+        }
+        tr:hover {
+            background: #282c34;
+        }
+        footer {
+            margin-top: auto !important;
+            padding: 18px 0 10px 0;
+            text-align: center;
+            width: 100%;
+        }
+        @media (max-width: 700px) {
+            th, td { padding: 8px 6px; font-size: 0.95rem; }
+            h1 { font-size: 1.5rem; }
+            th.rank-col, td.rank-col { width: 48px; min-width: 48px; max-width: 48px; }
+            th.user-col, td.user-col { width: 120px; min-width: 120px; max-width: 120px; }
+            th.points-col, td.points-col { width: 80px; min-width: 80px; max-width: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>SECE CP LEADERBOARD</h1>
+    <h2 style="text-align:center;color:#00e1ff;">Phase I</h2>
+    <div class="leaderboard-container">
+        <div class="scroll-x">
+            <table>
+                <tr>
+                    <th class="rank-col">Rank</th>
+                    <th class="user-col">User</th>
+                    <th class="points-col">Total Points</th>
+                    {{ range .contests }}
+                        <th><a href="https://codeforces.com/contest/{{ .id }}" target="_blank" style="color:#00e1ff;text-decoration:underline;">{{ .name }}</a></th>
+                    {{ end }}
+                </tr>
+                
+                {{ range .users }}
+                <tr>
+                    <td class="rank-col">{{ .rank }}</td>
+                    <td class="user-col">{{ .display_name }} <a href="https://codeforces.com/profile/{{ .handle }}" target="_blank" style="color:#00e1ff;text-decoration:underline;">({{ .handle }})</a></td>
+                    <td class="points-col">{{ .total_points }}</td>
+                    {{ $uid := .id }}
+                    {{ range $.contests }}
+                        {{ $cid := .id }}
+                        <td>
+                        {{ with (index (index $.results $uid) $cid) }}
+                            <span style="color:#ffb300;">Rank: {{ .rank }}</span><br>
+                            <span style="color:#00ffb3;">Points: {{ .points }}</span>
+                        {{ else }}
+                            <span style="color:#555;">-</span>
+                        {{ end }}
+                        </td>
+                    {{ end }}
+                </tr>
+                {{ end }}
+            </table>
+        </div>
+    </div>
+    <footer>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 18px;">
+            <a href="https://github.com/je573r/sece-cp-leaderboard/issues" target="_blank" style="display:inline-block;">
+                <img src="https://img.shields.io/badge/report%20a%20problem-%F0%9F%90%9E%20GitHub-black?style=social&labelColor=23272f&color=23272f" alt="Report a problem" style="vertical-align: middle;"/>
+            </a>
+            <a href="https://github.com/je573r/sece-cp-leaderboard/stargazers" target="_blank" style="display:inline-block;">
+                <img src="https://img.shields.io/badge/Star%20this%20repo-%E2%AD%90%EF%B8%8F%20GitHub-black?style=social&labelColor=23272f&color=23272f" alt="Star this repo on GitHub" style="vertical-align: middle;"/>
+            </a>
+        </div>
+    </footer>
+</body>
+</html>
+{{ end }}
