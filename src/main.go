@@ -30,7 +30,7 @@ func init() {
 	}
 
 	// Initialize SQLite database
-	d, err := sql.Open("sqlite3", "./leaderboard.db")
+	d, err := sql.Open("sqlite3", "./data/leaderboard.db")
 	if err != nil {
 		log.Fatal("Failed to open SQLite database:", err)
 	}
