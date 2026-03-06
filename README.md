@@ -15,7 +15,7 @@ A modern, mobile-friendly Codeforces group leaderboard web app built with Go (Gi
 1. **Clone the repo**
 
 ```bash
-git clone https://github.com/SIDHANT-SIN/sece-cp-leaderboard.git
+git clone https://github.com/je573r/sece-cp-leaderboard.git
 cd sece-cp-leaderboard
 ```
 
@@ -47,4 +47,3 @@ go run src/main.go
 
 ## License
 MIT
-
