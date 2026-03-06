@@ -424,19 +424,21 @@ func calculatePoints(rank, total int, div string) int {
 	score := int(math.Max(10*d*math.Log10(float64(total+1)/float64(rank+1)), 0)) + baseParticipation
 	return score
 }
-
 // Refresh all user contest results and update points
 func refreshAllUserContestResults() error {
+
 	// Get all users
 	userRows, err := db.Query("SELECT id, codeforces_handle FROM users")
 	if err != nil {
 		return err
 	}
 	defer userRows.Close()
+
 	var users []struct {
 		ID     int
 		Handle string
 	}
+
 	for userRows.Next() {
 		var id int
 		var handle string
@@ -446,16 +448,29 @@ func refreshAllUserContestResults() error {
 			Handle string
 		}{id, handle})
 	}
+
+	
+	var handleList []string
+	for _, u := range users {
+		if u.Handle != "" {
+			handleList = append(handleList, u.Handle)
+		}
+	}
+	handlesParam := strings.Join(handleList, ";")
+
+
 	// Get all contests
 	contestRows, err := db.Query("SELECT id, codeforces_contest_id FROM contests")
 	if err != nil {
 		return err
 	}
 	defer contestRows.Close()
+
 	var contests []struct {
 		ID   int
 		CFID int
 	}
+
 	for contestRows.Next() {
 		var id, cfid int
 		contestRows.Scan(&id, &cfid)
@@ -464,13 +479,25 @@ func refreshAllUserContestResults() error {
 			CFID int
 		}{id, cfid})
 	}
+
 	for _, contest := range contests {
-		// Fetch standings for this contest
-		resp, err := http.Get("https://codeforces.com/api/contest.standings?contestId=" +
-			fmt.Sprint(contest.CFID) + "&showUnofficial=false")
-		if err != nil || resp.StatusCode != 200 {
-			continue // skip this contest if error
+
+		
+		url := "https://codeforces.com/api/contest.standings?contestId=" +
+			fmt.Sprint(contest.CFID) +
+			"&showUnofficial=false"
+
+		if handlesParam != "" {
+			url += "&handles=" + handlesParam
 		}
+
+		resp, err := http.Get(url)
+		
+
+		if err != nil || resp.StatusCode != 200 {
+			continue
+		}
+
 		var standings struct {
 			Status string `json:"status"`
 			Result struct {
@@ -487,11 +514,15 @@ func refreshAllUserContestResults() error {
 				} `json:"rows"`
 			} `json:"result"`
 		}
+
 		err = json.NewDecoder(resp.Body).Decode(&standings)
+		resp.Body.Close()
 		if err != nil || standings.Status != "OK" {
 			continue
 		}
+
 		total := len(standings.Result.Rows)
+
 		// Determine division from contest name
 		div := "Div. 1"
 		if strings.Contains(standings.Result.Contest.Name, "Div. 2") {
@@ -501,8 +532,11 @@ func refreshAllUserContestResults() error {
 		} else if strings.Contains(standings.Result.Contest.Name, "Div. 4") {
 			div = "Div. 4"
 		}
+
 		for _, user := range users {
+
 			userRank := 0
+
 			for _, row := range standings.Result.Rows {
 				for _, m := range row.Party.Members {
 					if m.Handle == user.Handle {
@@ -514,16 +548,25 @@ func refreshAllUserContestResults() error {
 					break
 				}
 			}
+
 			points := 0
 			if userRank > 0 {
 				points = calculatePoints(userRank, total, div)
 			}
-			_, err = db.Exec(`INSERT OR REPLACE INTO user_contest_results (user_id, contest_id, rank, points, last_updated) VALUES (?, ?, ?, ?, strftime('%s','now'))`, user.ID, contest.ID, userRank, points)
+
+			_, err = db.Exec(
+				`INSERT OR REPLACE INTO user_contest_results 
+				(user_id, contest_id, rank, points, last_updated) 
+				VALUES (?, ?, ?, ?, strftime('%s','now'))`,
+				user.ID, contest.ID, userRank, points,
+			)
+
 			if err != nil {
 				log.Println("Failed to update result for user", user.Handle, "contest", contest.CFID, err)
 			}
 		}
 	}
+
 	return nil
 }
 
